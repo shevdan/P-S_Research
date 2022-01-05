@@ -1,0 +1,201 @@
+---
+title: "Heart_project"
+output: html_document
+---
+
+**P&S Project on Data Analysis and Visualization**
+
+For our project we decided to analyze the dataset from https://www.kaggle.com/fedesoriano/heart-failure-prediction
+
+concerning the heart diseases and health parameters which might be indicators to the health disease
+
+and used further to predict the possibility of a heart disease given these parameters.
+
+We decided to focus on few of the parameters and show how age, cholesterol level and sex might correlates to heart diseases.
+
+
+
+```{r}
+library(ggplot2)
+library(BSDA)
+library(fitdistrplus)
+```
+
+
+### Reading and processing the data
+```{r}
+heart <- read.csv("heart.csv")
+```
+
+**General information about the data obtained**
+
+```{r}
+
+summary(heart)
+
+```
+
+**Visualizing the correlation between parameters and Heart Failures**
+
+```{r}
+
+ggplot(heart,aes(x=Age,fill=factor(HeartDisease)))+geom_density(alpha=0.5)+
+ xlab(label = "Age")+
+ ggtitle("Correlation between Heart Diseases and Age")
+
+```
+
+
+```{r}
+
+ggplot(heart,aes(x=Cholesterol,fill=factor(HeartDisease)))+geom_density(alpha=0.5)+
+ xlab(label = "Cholesterol")+
+ ggtitle("Correlation between Heart Diseases and Cholesterol")
+
+```
+
+```{r}
+ggplot(heart,aes(x=HeartDisease,fill=factor(Sex)))+geom_density(alpha=0.5)+
+ xlab(label = "Heart Disease")+
+ ggtitle("Correlation between Heart Diseases and Sex")
+
+```
+**However, let's take a look on the number of males and females**
+```{r}
+summary(heart$Sex)
+
+summary(heart$Sex == "M")
+
+```
+Therefore, there is information about 193 females and 725 males in this dataset.
+
+Even with this inequality in numbers between genders, we see that there are more females without
+
+heart diseases, than males, whose number in the given statistics of the dataset is 3.5 times larger than females'
+
+
+**Determination of the Age and Cholesterol distributions**
+
+```{r}
+descdist(heart$Age)
+
+```
+
+Given these results, we might assume that distribution of the age in the given statistics is close to normal.
+
+Let's apply this to Cholesterol as well
+```{r}
+descdist(heart$Cholesterol)
+
+```
+Cholesterol distribution is close to normal as well, but it is not that close as Age's distribution. We'll see it in a bit.
+
+
+### Testing
+
+First, let's visualize the distribution of the Age and Cholesterol (without correlation to heart failure, as we did it before)
+
+```{r}
+
+cholesterol <- heart$Cholesterol
+cholesterol = cholesterol[cholesterol != 0]
+hist(heart$Age)
+lines(x=dnorm(heart$Age, mean=mean(heart$Age), sd=sd(heart$Age)))
+hist(cholesterol)
+```
+We see that Age and Cholesterol distributions look like normal distributions, though skewed.
+
+Cholesterol distribution is right skewed.
+
+
+Now, let's finally test if age or cholesterol data are normally distributed. For this we will use Shapiro-Wilk test for normality.
+
+**Normal distribution**
+
+```{r}
+shapiro.test(heart$Age)
+shapiro.test(cholesterol)
+
+```
+As we can see, p-values for both test converge to zero, so neither age nor cholesterol data follow normal distribution, even though p-value
+
+of the Age is a lot bigger than cholesterol's, which could be seen from the graphics above.
+
+
+Let's test it on exponential distribution using Kolmogorov-Smirnov test.
+
+**Exponential distribution**
+
+
+```{r}
+ks.test(heart$Age, 'pexp', rate=1/mean(heart$Age))
+ks.test(cholesterol, 'pexp', rate=1/mean(cholesterol))
+```
+So we see that age and cholesterol doesn't follow exponential distribuition either.
+
+**Cholesterol and Age**
+
+
+Now let's test if Age and Cholesterol level are independent using chi-squared test.
+
+```{r}
+chisq.test(heart$Cholesterol, heart$Age)
+```
+We see that p-value converges to zero, that means that age and cholesterol level are stronlgly correlated.
+
+Now let's test other features concerning the Heart Disease
+
+**Age and Heart Diseases**
+
+
+And start with correlation between Age and Heart Diseases
+
+```{r}
+chisq.test(heart$Age, heart$HeartDisease)
+
+```
+p-value goes to zero therefore Heart Diseases depend on the Age of the person.
+
+**Cholesterol and Heart Diseases**
+
+Now the same for Cholesterol
+
+```{r}
+chisq.test(heart$Cholesterol, heart$HeartDisease)
+
+```
+p-value is close to zero therefore Heart Diseases depend on the Cholesterol level of the person.
+
+
+**Age and Heart Diseases**
+
+
+Now let's find out whether heart diseases depend on the sex of the person
+
+```{r}
+chisq.test(heart$Sex, heart$HeartDisease)
+
+```
+
+P-value converges to zero which supports the theory that Heart Diseases depend on the sex
+
+
+
+
+### Conclusion
+
+To conclude, we have shown the dependence of Age, Sex and Cholesterol level on the Heart Failure
+
+and shown interesting correlations between them, especially unobvious fact about females having
+
+less heart failures than males, and pretty obvious such that risk of the heart failure increases with the age.
+
+We have learnt how to work with real-life data and apply knowledge obtained during the course
+
+to a real problem. We were lucky that chosen dataset is very clean, without any NaN values and ready to use in
+
+practice. It really helped us to focus on analyzing the dependencies between features and making assumptions about the 
+
+distributions of the data. It turned out that real life data rarely follows the ideal patterns of distributions that we learned
+
+but it is easy to approximate them to normal (even if they dont follow it) and work with them pretty easy.
